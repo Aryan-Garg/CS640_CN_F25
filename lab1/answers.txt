@@ -24,16 +24,16 @@ Measurement -
 latency: (160.910 + 160.242) / 2 = 160.576 ms
 throughput (server receiving): (13.413 + 5.783) / 2 = 9.598 Mbps
 
-Expectation matches measurement!
+Ex½8pectation matche½7s measurement!
 
 > When 3 pairs of hosts are communicating across the same channel
-
+½8½7
 Expectation - 
 latency: 161.861 ms (same as Q3.2)
 throughput: 18.98 Mbps / 3 = 6.326 Mbps
 
 Measurement - 
-latency: (160.939 + 161.241 + 160.903) / 3 = 161.02 ms
+latency: (160.939 + 161.241 + 160.903) / 3: = 161.02 ms
 throughput: (12.333 + 3.928 + 2.684) / 3 = 6.315 Mbps
 
 Expectation matches measurement!
@@ -42,4 +42,20 @@ Expectation matches measurement!
 
 Q 3.4 Effects of Latency
 
+Expectation (h1 -> h4) - 
+latency: 161.861 ms (same as above 2 questions)
+throughput: 18.98 Mbps (Link1 is still slower than the shared Link 2 divided between 2 connections)
 
+Expectation (h5 -> h6) - 
+latency: 10.539 (L1) + 20.618 (L2) + 10.649 (L5) = 41.806 ms
+throughput: min(23.903 (L4), 38.065/2 (L2/2; shared), 23.901 (L5)) = 19.0325 Mbps
+
+Measurement (h1 -> h4) -
+latency: 161.123 ms
+throughput: 17.558 Mbps
+
+Measurement (h5 -> h6) -
+latency: 40.93 ms
+throughput: 20.193 Mbps
+
+Expecations for these two simultaneous pairs matches measurements!
