@@ -1,4 +1,4 @@
-Q3.2 
+Q3.2 Path Latency and Throughput
 
 Expectation -
 latency: 80.661 (avg latency of L1) + 20.618 (avg latency L2) + 60.582 (avg latency L3) = 161.861 ms
@@ -12,12 +12,34 @@ Expectation matched the measurement!
 
 ---
 
-Q3.3
+Q3.3 Effects of Multiplexing
+
+> When 2 pairs of hosts are communicating across L1 -> L2 -> L3 (s1 -> s4)
 
 Expectation -
-latency:
-throughput:
+latency: 161.861 ms (same as Q3.2; it doesn't matter who the packet belongs to so latency measures the fastest time ANY packet reaches the other end)
+throughput: 18.98 Mbps / 2 = 9.99 Mbps
 
 Measurement - 
-latency:
-throughput: 
+latency: (160.910 + 160.242) / 2 = 160.576 ms
+throughput (server receiving): (13.413 + 5.783) / 2 = 9.598 Mbps
+
+Expectation matches measurement!
+
+> When 3 pairs of hosts are communicating across the same channel
+
+Expectation - 
+latency: 161.861 ms (same as Q3.2)
+throughput: 18.98 Mbps / 3 = 6.326 Mbps
+
+Measurement - 
+latency: (160.939 + 161.241 + 160.903) / 3 = 161.02 ms
+throughput: (12.333 + 3.928 + 2.684) / 3 = 6.315 Mbps
+
+Expectation matches measurement!
+
+---
+
+Q 3.4 Effects of Latency
+
+
