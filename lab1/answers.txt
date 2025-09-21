@@ -1,0 +1,23 @@
+Q3.2 
+
+Expectation -
+latency: 80.661 (avg latency of L1) + 20.618 (avg latency L2) + 60.582 (avg latency L3) = 161.861 ms
+throughput: minimum of receiving throughputs across L1, L2, L3 => min (18.937 (L1), 38.065 (L2), 28.465 (L3)) = 18.98 Mbps
+
+Measurements -
+latency: 160.919 ms
+throughput (receiving): 18.665 Mbps
+
+Expectation matched the measurement!
+
+---
+
+Q3.3
+
+Expectation -
+latency:
+throughput:
+
+Measurement - 
+latency:
+throughput: 
