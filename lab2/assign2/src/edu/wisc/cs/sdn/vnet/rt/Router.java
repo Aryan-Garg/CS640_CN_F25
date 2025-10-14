@@ -88,10 +88,9 @@ public class Router extends Device
 		try{
 			short etherpktType = etherPacket.getEtherType();
 			System.out.println("*** -> EtherType: " + etherpktType);
-			boolean isv4 = (etherpktType ==  Ethernet.TYPE_IPv4); // 0x0800 is for TYPE_IPv4 in Ethernet.java file
-			System.out.println("Is V4?" + isv4);
-			if (isv4){
+			if (etherpktType ==  Ethernet.TYPE_IPv4){
 				// Cast packet to IPv4 first then get payload tho
+				System.out.println("Is V4!");
 				IPv4 ipv4_etherPacket = (IPv4) etherPacket.getPayload();
 
 				// Verify checksum then TTL
