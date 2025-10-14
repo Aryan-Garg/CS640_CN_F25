@@ -88,6 +88,7 @@ public class Router extends Device
 		/* TODO: Handle packets  
 		 * Complete the handlePacket(...) method to update and send a received packet out the appropriate interface of the router. */
 		boolean isv4 = (etherPacket.getEtherType() ==  0x0800); // 0x0800 is for TYPE_IPv4 in Ethernet.java file
+		System.out.println("Is V4?" + isv4);
 		if (isv4){
 			// Cast packet to IPv4 first then get payload tho
 			IPv4 ipv4_etherPacket = (IPv4) etherPacket.getPayload();
