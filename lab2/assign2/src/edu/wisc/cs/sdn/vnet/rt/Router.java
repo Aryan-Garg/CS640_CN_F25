@@ -1,6 +1,7 @@
 package edu.wisc.cs.sdn.vnet.rt;
 
 import net.floodlightcontroller.packet.Ethernet; /** use for getEtherType -> To determine IPv4 or not */
+import net.floodlightcontroller.packet.IPacket;
 import net.floodlightcontroller.packet.IPv4;
 
 import edu.wisc.cs.sdn.vnet.Device;
@@ -84,6 +85,7 @@ public class Router extends Device
 		System.out.println("*** -> Received packet: " +
 				etherPacket.toString().replace("\n", "\n\t"));
 		
+		System.out.println("After toString ....");
 		/********************************************************************/
 		try{
 			short etherpktType = etherPacket.getEtherType();

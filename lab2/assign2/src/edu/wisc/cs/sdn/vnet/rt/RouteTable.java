@@ -45,6 +45,7 @@ public class RouteTable
 				int maskedIp = ip & entry.getMaskAddress();
 				int maskedDst = entry.getDestinationAddress() & entry.getMaskAddress();
 				if (maskedIp == maskedDst){ /** Match found --> now need to find longest subnet mask */
+					System.out.println("Found a match. Calculating prefix length...");
 					int prefixLength = Integer.bitCount(entry.getMaskAddress());
 					if (prefixLength > longestPrefix){
 						longestPrefix = prefixLength;
