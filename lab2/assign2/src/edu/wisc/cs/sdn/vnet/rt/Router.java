@@ -87,6 +87,7 @@ public class Router extends Device
 		/********************************************************************/
 		/* TODO: Handle packets  
 		 * Complete the handlePacket(...) method to update and send a received packet out the appropriate interface of the router. */
+		System.out.println("EtherType raw field: " + etherPacket.getEtherType());
 		boolean isv4 = (etherPacket.getEtherType() ==  Ethernet.TYPE_IPv4); // 0x0800 is for TYPE_IPv4 in Ethernet.java file
 		System.out.println("Is V4?" + isv4);
 		if (isv4){
