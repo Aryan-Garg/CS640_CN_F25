@@ -3,9 +3,8 @@ package edu.wisc.cs.sdn.vnet.rt;
 import edu.wisc.cs.sdn.vnet.Device;
 import edu.wisc.cs.sdn.vnet.DumpFile;
 import edu.wisc.cs.sdn.vnet.Iface;
-import net.floodlightcontroller.packet.ARP;
+
 import net.floodlightcontroller.packet.Ethernet; /** use for getEtherType -> To determine IPv4 or not */
-import net.floodlightcontroller.packet.IPacket;
 import net.floodlightcontroller.packet.IPv4;
 
 /**
@@ -87,8 +86,9 @@ public class Router extends Device
 		/********************************************************************/
 		/* TODO: Handle packets  
 		 * Complete the handlePacket(...) method to update and send a received packet out the appropriate interface of the router. */
-		System.out.println("EtherType raw field: " + etherPacket.getEtherType());
-		boolean isv4 = (etherPacket.getEtherType() ==  Ethernet.TYPE_IPv4); // 0x0800 is for TYPE_IPv4 in Ethernet.java file
+		short etherpktType = etherPacket.getEtherType();
+		System.out.println("*** -> EtherType: " + etherpktType);
+		boolean isv4 = (etherpktType ==  Ethernet.TYPE_IPv4); // 0x0800 is for TYPE_IPv4 in Ethernet.java file
 		System.out.println("Is V4?" + isv4);
 		if (isv4){
 			// Cast packet to IPv4 first then get payload tho
