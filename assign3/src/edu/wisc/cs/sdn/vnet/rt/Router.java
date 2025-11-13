@@ -56,24 +56,26 @@ public class Router extends Device
 		System.out.println("-------------------------------------------------");
 	}
 
-	public void startRIP() {
-    // Seed directly connected routes (gateway = 0; metric handled by RouteTable)
-    for (Iface iface : this.interfaces.values()) {
-        int subnet = iface.getIpAddress() & iface.getSubnetMask();
-        int mask   = iface.getSubnetMask();
+	public void startRIP() 
+	{
+    	// Seed directly connected routes (gateway = 0; metric handled by RouteTable)
+    	for (Iface iface : this.interfaces.values()) {
+    	    int subnet = iface.getIpAddress() & iface.getSubnetMask();
+    	    int mask   = iface.getSubnetMask();
 
-        // Insert "direct" route with no gateway
-        // Signature is the standard CS640: insert(destination, gateway, mask, iface)
-        boolean ok = this.routeTable.insert(subnet, 0, mask, iface);
+    	    // Insert "direct" route with no gateway
+    	    // Signature is the standard CS640: insert(destination, gateway, mask, iface)
+    	    boolean ok = this.routeTable.insert(subnet, 0, mask, iface);
 
-        System.out.println(String.format(
-            "[RIP-init] Direct route %s/%d via iface %s %s",
-            net.floodlightcontroller.packet.IPv4.fromIPv4Address(subnet),
-            Integer.bitCount(mask),
-            iface.getName(),
-            ok ? "(added)" : "(already present)"
-        ));
-    }
+    	    System.out.println(String.format(
+    	        "[RIP-init] Direct route %s/%d via iface %s %s",
+    	        net.floodlightcontroller.packet.IPv4.fromIPv4Address(subnet),
+    	        Integer.bitCount(mask),
+    	        iface.getName(),
+    	        ok ? "(added)" : "(already present)"
+    	    ));
+    	}
+	}
 
 	/**
 	 * Load a new ARP cache from a file.
