@@ -67,13 +67,13 @@ public class Router extends Device
     	    // Signature is the standard CS640: insert(destination, gateway, mask, iface)
     	    this.routeTable.insert(subnet, 0, mask, iface);
 
-    	    System.out.println(String.format(
-    	        "[RIP-init] Direct route %s/%d via iface %s %s",
-    	        net.floodlightcontroller.packet.IPv4.fromIPv4Address(subnet),
-    	        Integer.bitCount(mask),
-    	        iface.getName(),
-    	        ok ? "(added)" : "(already present)"
-    	    ));
+    	    System.out.println(
+        		String.format(
+            	"Inserted direct route: subnet=%s mask=%s iface=%s",
+            	IPv4.fromIPv4Address(subnet),
+            	IPv4.fromIPv4Address(mask),
+            	iface.getName()
+        	));
     	}
 	}
 
