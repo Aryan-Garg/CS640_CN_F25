@@ -269,7 +269,11 @@ public class Router extends Device
 
 	@Override
 	public void handlePacket(Ethernet etherPacket, Iface inIface)
-	{
+	{	
+		if (inIface == null) {
+    		System.err.println("[DROP] inIface is null -- ignoring early packet");
+    		return;
+		}
 		System.out.println("*** -> Received packet: " +
 				etherPacket.toString().replace("\n", "\n\t"));
 		
@@ -349,7 +353,7 @@ public class Router extends Device
 			processing - i.e., router should drop the packet. */
 		for (Iface iface : this.interfaces.values()) {
         	if (ipv4Packet.getDestinationAddress() == iface.getIpAddress()) {
-        	    System.out.println("Packet destined for router interface " + iface.getName() + " - dropping");
+        	    System.out.println("Packet destined for router interface " + iface.getName() + " --- dropping");
         	    return;
         	}
        	}
