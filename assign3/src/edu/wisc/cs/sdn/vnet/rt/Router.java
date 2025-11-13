@@ -179,6 +179,14 @@ public class Router extends Device
 
 	private void sendRipPacket(RIPv2 rip, Iface outIface, int dstIp, byte[] dstMac)
     {
+		if (outIface == null) {
+        	System.out.println("[RIP] sendRipPacket: outIface is null, skipping");
+        	return;
+    	}
+		if (outIface.getMacAddress() == null || outIface.getIpAddress() == 0) {
+        	System.out.println("[RIP] sendRipPacket: iface " + outIface.getName() + " has no MAC/IP, skipping");
+        	return;
+    	}
         UDP udp = new UDP();
         udp.setSourcePort((short)RIP_PORT);
         udp.setDestinationPort((short)RIP_PORT);
