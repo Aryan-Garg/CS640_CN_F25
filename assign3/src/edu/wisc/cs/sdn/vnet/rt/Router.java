@@ -91,6 +91,10 @@ public class Router extends Device
 	{
     	// Seed directly connected routes (gateway = 0; metric handled by RouteTable)
     	for (Iface iface : this.interfaces.values()) {
+			if(iface == null){
+				System.out.println("[RIP] Skipping null iface in startRIP");
+        		continue;
+			}
 			int ip   = iface.getIpAddress();
         	int mask = iface.getSubnetMask();
 			if (ip == 0 || mask == 0) {
@@ -143,6 +147,7 @@ public class Router extends Device
 	private void sendPeriodicRipResponses()
     {
         for (Iface iface : this.interfaces.values()) {
+			if (iface == null) continue;
             RIPv2 rip = buildRipResponse();
             sendRipPacket(rip, iface,
                     IPv4.toIPv4Address("224.0.0.9"),
