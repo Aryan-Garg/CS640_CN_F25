@@ -91,13 +91,18 @@ public class Router extends Device
 	{
     	// Seed directly connected routes (gateway = 0; metric handled by RouteTable)
     	for (Iface iface : this.interfaces.values()) {
-    	    int subnet = iface.getIpAddress() & iface.getSubnetMask();
-    	    int mask   = iface.getSubnetMask();
+			int ip   = iface.getIpAddress();
+        	int mask = iface.getSubnetMask();
+			if (ip == 0 || mask == 0) {
+            	System.out.println("[RIP] Skipping iface " + iface.getName() + " (no IP/mask)");
+            	continue;
+        	}
+    	    int subnet = ip & mask;
+
 
     	    // Insert "direct" route with no gateway
     	    // Signature is the standard CS640: insert(destination, gateway, mask, iface)
     	    this.routeTable.insert(subnet, 0, mask, iface);
-			
 			this.ripMap.put(subnet, new RipInfo(0, true));
 
     	    System.out.println(
@@ -111,6 +116,8 @@ public class Router extends Device
 
 		/* Send RIP requests */
         for (Iface iface : this.interfaces.values()) {
+			int ip = iface.getIpAddress();
+        	if (ip == 0) continue; // do not send from unconfigured iface
             sendRipRequest(iface);
         }
 
@@ -121,6 +128,7 @@ public class Router extends Device
         scheduler.scheduleAtFixedRate(() -> sweepRipTimeouts(), 1, 1, TimeUnit.SECONDS);
 	}
 
+	
 	 private void sendRipRequest(Iface iface)
     {
         RIPv2 rip = new RIPv2();
@@ -129,6 +137,7 @@ public class Router extends Device
 
         sendRipPacket(rip, iface, IPv4.toIPv4Address("224.0.0.9"), Ethernet.toMACAddress("FF:FF:FF:FF:FF:FF"));
     }
+
 
 	private void sendPeriodicRipResponses()
     {
@@ -139,6 +148,7 @@ public class Router extends Device
                     Ethernet.toMACAddress("FF:FF:FF:FF:FF:FF"));
         }
     }
+
 
 	private RIPv2 buildRipResponse()
     {

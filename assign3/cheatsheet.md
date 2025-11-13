@@ -12,3 +12,4 @@ sudo ./run_mininet.py topos/single_rt.topo -a
 ant
 java -jar VirtualNetwork.jar -v r1 -a arp_cache
 java -jar VirtualNetwork.jar -v r2 -a arp_cache
+java -jar VirtualNetwork.jar -v r3 -a arp_cache
