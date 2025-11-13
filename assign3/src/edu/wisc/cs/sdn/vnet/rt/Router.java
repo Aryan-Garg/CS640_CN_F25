@@ -114,6 +114,7 @@ public class Router extends Device
         	));
     	}
 
+		sanitizeInterfaces();  
 		/* Send RIP requests */
         for (Iface iface : this.interfaces.values()) {
 			int ip = iface.getIpAddress();
@@ -176,6 +177,29 @@ public class Router extends Device
         return rip;
     }
 
+	// R3 won't start without it
+	private void sanitizeInterfaces() {
+    	List<String> toRemove = new LinkedList<>();
+
+    	for (Map.Entry<String, Iface> entry : this.interfaces.entrySet()) {
+    	    Iface iface = entry.getValue();
+
+    	    if (iface == null) {
+    	        System.out.println("[CLEANER4RIP] Removing null iface: " + entry.getKey());
+    	        toRemove.add(entry.getKey());
+    	        continue;
+    	    }
+
+    	    if (iface.getMacAddress() == null) {
+    	        System.out.println("[CLEANER4RIP] Removing iface with null MAC: " + iface.getName());
+    	        toRemove.add(entry.getKey());
+    	    }
+    	}
+
+    	for (String key : toRemove) {
+    	    this.interfaces.remove(key);
+    	}
+	}
 
 	private void sendRipPacket(RIPv2 rip, Iface outIface, int dstIp, byte[] dstMac)
     {
