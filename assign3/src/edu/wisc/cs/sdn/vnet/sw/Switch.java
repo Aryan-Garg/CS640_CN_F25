@@ -14,11 +14,7 @@ import edu.wisc.cs.sdn.vnet.Iface;
  * @author Aaron Gember-Jacobson
  */
 public class Switch extends Device
-<<<<<<< HEAD
-{	
-=======
 {
->>>>>>> fcad513a813969bb7f558dcdb9ee6649903396cc
 	// MAC address table that maps MAC addresses to interfaces
 	private Map<MACAddress, SwitchEntry> macTable;
 
@@ -57,11 +53,6 @@ public class Switch extends Device
 	{
 		System.out.println("*** -> Received packet: " +
 				etherPacket.toString().replace("\n", "\n\t"));
-<<<<<<< HEAD
-		
-=======
-
->>>>>>> fcad513a813969bb7f558dcdb9ee6649903396cc
 		//Grab the source MAC addr and reset timeout
 		MACAddress src = etherPacket.getSourceMAC();
 		long currTime = System.currentTimeMillis() / 1000; //convert to seconds
