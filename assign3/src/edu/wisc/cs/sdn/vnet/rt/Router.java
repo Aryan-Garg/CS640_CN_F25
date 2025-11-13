@@ -180,13 +180,24 @@ public class Router extends Device
 	private void sendRipPacket(RIPv2 rip, Iface outIface, int dstIp, byte[] dstMac)
     {
 		if (outIface == null) {
-        	System.out.println("[RIP] sendRipPacket: outIface is null, skipping");
-        	return;
-    	}
-		if (outIface.getMacAddress() == null || outIface.getIpAddress() == 0) {
-        	System.out.println("[RIP] sendRipPacket: iface " + outIface.getName() + " has no MAC/IP, skipping");
-        	return;
-    	}
+    		System.out.println("[-RIP] sendRipPacket: outIface is null, skipping");
+    		return;
+		}
+
+		if (outIface.getMacAddress() == null) {
+		    System.out.println("[-RIP] sendRipPacket: iface " + outIface.getName() + " has null MAC object, skipping");
+		    return;
+		}
+
+		if (outIface.getMacAddress().toBytes() == null) {
+		    System.out.println("[-RIP] sendRipPacket: iface " + outIface.getName() + " has null MAC bytes, skipping");
+		    return;
+		}
+
+		if (outIface.getIpAddress() == 0) {
+		    System.out.println("[-RIP] sendRipPacket: iface " + outIface.getName() + " has no IP, skipping");
+		    return;
+		}
         UDP udp = new UDP();
         udp.setSourcePort((short)RIP_PORT);
         udp.setDestinationPort((short)RIP_PORT);
@@ -198,8 +209,13 @@ public class Router extends Device
         ip.setTtl((byte)1);
 
         Ethernet ether = new Ethernet();
-        ether.setSourceMACAddress(outIface.getMacAddress().toBytes());
-        ether.setDestinationMACAddress(dstMac);
+        byte[] srcBytes = outIface.getMacAddress().toBytes();
+		if (srcBytes == null) {
+    		System.out.println("[-RIP] iface " + outIface.getName() + " returned null MAC bytes — skipping send");
+    		return;
+		}
+		ether.setSourceMACAddress(srcBytes);
+		ether.setDestinationMACAddress(dstMac);
         ether.setEtherType(Ethernet.TYPE_IPv4);
 
         udp.setPayload(rip);
