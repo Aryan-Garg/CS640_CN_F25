@@ -85,9 +85,17 @@ public class Main
 		
 		if (dev instanceof Router) 
 		{
+			Router r = (Router) dev;
 			// Read static route table
 			if (routeTableFile != null)
-			{ ((Router)dev).loadRouteTable(routeTableFile); }
+			{ 
+				r.loadRouteTable(routeTableFile); 
+				System.out.println("[Mode -r] Static routing table provided; RIP will NOT auto-start.");
+			}
+			else{
+				System.out.println("[Mode RIP] Starting RIP mode...");
+        		r.startRIP(); 
+			}
 			
 			// Read static ACP cache
 			if (arpCacheFile != null)
