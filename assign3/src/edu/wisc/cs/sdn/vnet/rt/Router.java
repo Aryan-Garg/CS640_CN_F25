@@ -4,10 +4,23 @@ import net.floodlightcontroller.packet.Ethernet; /** use for getEtherType -> To 
 import net.floodlightcontroller.packet.IPacket;
 import net.floodlightcontroller.packet.IPv4;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import assign3.src.net.floodlightcontroller.packet.RIPv2;
+import assign3.src.net.floodlightcontroller.packet.RIPv2Entry;
+import assign3.src.net.floodlightcontroller.packet.UDP;
 import edu.wisc.cs.sdn.vnet.Device;
 import edu.wisc.cs.sdn.vnet.DumpFile;
 import edu.wisc.cs.sdn.vnet.Iface;
 
+import net.floodlightcontroller.packet.*;
 
 /**
  * @author Aaron Gember-Jacobson and Anubhavnidhi Abhashkumar
@@ -20,10 +33,29 @@ public class Router extends Device
 	/** ARP cache for the router */
 	private ArpCache arpCache;
 	
-	/**
-	 * Creates a router for a specific host.
-	 * @param host hostname for the router
-	 */
+	private static class RipInfo {
+        int metric;
+        long lastUpdate;
+        boolean isDirect;
+
+        RipInfo(int metric, boolean isDirect) {
+            this.metric = metric;
+            this.isDirect = isDirect;
+            this.lastUpdate = System.currentTimeMillis();
+        }
+    }
+
+    /** key = destination subnet; value = RIP info */
+    private Map<Integer, RipInfo> ripMap = new ConcurrentHashMap<>();
+    private ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+	private static final int RIP_PORT = 520;
+    private static final int RIP_TIMEOUT_MS = 30000;
+    private static final int RIP_RESPONSE_INTERVAL_MS = 10000;
+    private static final int RIP_INFINITY = 16;
+
+	
+
 	public Router(String host, DumpFile logfile)
 	{
 		super(host,logfile);
@@ -56,6 +88,7 @@ public class Router extends Device
 		System.out.println("-------------------------------------------------");
 	}
 
+
 	public void startRIP() 
 	{
     	// Seed directly connected routes (gateway = 0; metric handled by RouteTable)
@@ -75,8 +108,91 @@ public class Router extends Device
             	iface.getName()
         	));
     	}
+
+		/* Send RIP requests */
+        for (Iface iface : this.interfaces.values()) {
+            sendRipRequest(iface);
+        }
+
+		/* Periodic unsolicited responses */
+        scheduler.scheduleAtFixedRate(() -> sendPeriodicRipResponses(), 0, RIP_RESPONSE_INTERVAL_MS, TimeUnit.MILLISECONDS);
+		
+		/* Route timeout sweeper */
+        scheduler.scheduleAtFixedRate(() -> sweepRipTimeouts(), 1, 1, TimeUnit.SECONDS);
 	}
 
+	 private void sendRipRequest(Iface iface)
+    {
+        RIPv2 rip = new RIPv2();
+        rip.setCommand(RIPv2.COMMAND_REQUEST);
+        rip.setEntries(new LinkedList<RIPv2Entry>()); // empty = request all routes
+
+        sendRipPacket(rip, iface, IPv4.toIPv4Address("224.0.0.9"), Ethernet.toMACAddress("FF:FF:FF:FF:FF:FF"));
+    }
+
+	private void sendPeriodicRipResponses()
+    {
+        for (Iface iface : this.interfaces.values()) {
+            RIPv2 rip = buildRipResponse();
+            sendRipPacket(rip, iface,
+                    IPv4.toIPv4Address("224.0.0.9"),
+                    Ethernet.toMACAddress("FF:FF:FF:FF:FF:FF"));
+        }
+    }
+
+	private RIPv2 buildRipResponse()
+    {
+        RIPv2 rip = new RIPv2();
+        rip.setCommand(RIPv2.COMMAND_RESPONSE);
+
+        List<RIPv2Entry> entries = new LinkedList<>();
+
+        for (RouteEntry entry : this.routeTable.getEntries()) {
+            int subnet = entry.getDestinationAddress();
+            int mask   = entry.getMaskAddress();
+
+            RipInfo info = ripMap.get(subnet);
+            if (info == null) continue;
+
+            RIPv2Entry r = new RIPv2Entry();
+            r.setAddress(subnet);
+            r.setSubnetMask(mask);
+            r.setNextHop(entry.getGatewayAddress());
+            r.setMetric(info.metric);
+
+            entries.add(r);
+        }
+
+        rip.setEntries(entries);
+        return rip;
+    }
+
+
+	private void sendRipPacket(RIPv2 rip, Iface outIface, int dstIp, byte[] dstMac)
+    {
+        UDP udp = new UDP();
+        udp.setSourcePort((short)RIP_PORT);
+        udp.setDestinationPort((short)RIP_PORT);
+
+        IPv4 ip = new IPv4();
+        ip.setProtocol(IPv4.PROTOCOL_UDP);
+        ip.setSourceAddress(outIface.getIpAddress());
+        ip.setDestinationAddress(dstIp);
+        ip.setTtl((byte)64);
+
+        Ethernet ether = new Ethernet();
+        ether.setSourceMACAddress(outIface.getMacAddress().toBytes());
+        ether.setDestinationMACAddress(dstMac);
+        ether.setEtherType(Ethernet.TYPE_IPv4);
+
+        udp.setPayload(rip);
+        ip.setPayload(udp);
+        ether.setPayload(ip);
+
+        sendPacket(ether, outIface);
+
+        System.out.println("Sent RIP packet out " + outIface.getName());
+    }
 	/**
 	 * Load a new ARP cache from a file.
 	 * @param arpCacheFile the name of the file containing the ARP cache
@@ -101,6 +217,7 @@ public class Router extends Device
 	 * @param etherPacket the Ethernet packet that was received
 	 * @param inIface the interface on which the packet was received
 	 */
+	@Override
 	public void handlePacket(Ethernet etherPacket, Iface inIface)
 	{
 		System.out.println("*** -> Received packet: " +
@@ -132,6 +249,15 @@ public class Router extends Device
             	return;
         	}
         	IPv4 ipv4Packet = (IPv4) payload;
+
+			if (ipv4Packet.getProtocol() == IPv4.PROTOCOL_UDP) {
+            	UDP udp = (UDP) ipv4Packet.getPayload();
+            	if (udp.getDestinationPort() == RIP_PORT) {
+            	    handleRipPacket(etherPacket, ipv4Packet, udp, inIface);
+            	    return;
+            	}
+        	}
+
 			// Verify checksum then TTL
 			short originalChecksum = ipv4Packet.getChecksum();
     		ipv4Packet.setChecksum((short) 0);
@@ -196,4 +322,90 @@ public class Router extends Device
 		}
 		/********************************************************************/
 	}
+
+	public void handleRipPacket(Ethernet ether, IPv4 ip, UDP udp, Iface iface)
+    {
+        RIPv2 rip = (RIPv2) udp.getPayload();
+
+        if (rip.getCommand() == RIPv2.COMMAND_REQUEST) {
+            /* Reply with full routing table to requesting router */
+            RIPv2 response = buildRipResponse();
+            sendRipPacket(response, iface, ip.getSourceAddress(), ether.getSourceMACAddress());
+            return;
+        }
+
+        if (rip.getCommand() == RIPv2.COMMAND_RESPONSE) {
+            processRipResponse(rip, ip.getSourceAddress(), iface);
+        }
+    }
+
+	private void processRipResponse(RIPv2 rip, int senderIp, Iface iface)
+    {
+        long now = System.currentTimeMillis();
+
+        for (RIPv2Entry entry : rip.getEntries()) {
+
+            int subnet = entry.getAddress();
+            int mask   = entry.getSubnetMask();
+            int metric = entry.getMetric();
+
+            int newMetric = Math.min(RIP_INFINITY, metric + 1);
+
+            RouteEntry existing = routeTable.lookup(subnet);
+
+            boolean exists = (existing != null &&
+                    existing.getMaskAddress() == mask);
+
+            RipInfo existingInfo = ripMap.get(subnet);
+
+            if (!exists) {
+                if (newMetric >= RIP_INFINITY) continue;
+
+                routeTable.insert(subnet, senderIp, mask, iface);
+                ripMap.put(subnet, new RipInfo(newMetric, false));
+                System.out.println("[RIP] Added new route " +
+                    IPv4.fromIPv4Address(subnet) +
+                    " metric=" + newMetric);
+            }
+            else {
+                if (existingInfo == null) continue;
+
+                if (newMetric < existingInfo.metric) {
+                    routeTable.update(subnet, mask, senderIp, iface);
+                    existingInfo.metric = newMetric;
+                    existingInfo.lastUpdate = now;
+                    System.out.println("[RIP] Improved route " +
+                        IPv4.fromIPv4Address(subnet) +
+                        " metric=" + newMetric);
+                }
+                else {
+                    existingInfo.lastUpdate = now;
+                }
+            }
+        }
+    }
+
+	private void sweepRipTimeouts()
+    {
+        long now = System.currentTimeMillis();
+
+        for (Integer subnet : new HashSet<>(ripMap.keySet())) {
+            RipInfo info = ripMap.get(subnet);
+            if (info == null || info.isDirect) continue;
+
+            if (now - info.lastUpdate > RIP_TIMEOUT_MS) {
+                /* Timed out */
+                for (RouteEntry e : routeTable.getEntries()) {
+                    if (e.getDestinationAddress() == subnet) {
+                        routeTable.remove(subnet, e.getMaskAddress());
+                        break;
+                    }
+                }
+                ripMap.remove(subnet);
+                System.out.println("[RIP] Removed stale route " +
+                    IPv4.fromIPv4Address(subnet));
+            }
+        }
+    }
+
 }
