@@ -1,4 +1,7 @@
 package edu.wisc.cs.sdn.vnet.rt;
+import edu.wisc.cs.sdn.vnet.Device;
+import edu.wisc.cs.sdn.vnet.DumpFile;
+import edu.wisc.cs.sdn.vnet.Iface;
 
 import net.floodlightcontroller.packet.Ethernet; /** use for getEtherType -> To determine IPv4 or not */
 import net.floodlightcontroller.packet.IPacket;
@@ -13,14 +16,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import assign3.src.net.floodlightcontroller.packet.RIPv2;
-import assign3.src.net.floodlightcontroller.packet.RIPv2Entry;
-import assign3.src.net.floodlightcontroller.packet.UDP;
-import edu.wisc.cs.sdn.vnet.Device;
-import edu.wisc.cs.sdn.vnet.DumpFile;
-import edu.wisc.cs.sdn.vnet.Iface;
-
-import net.floodlightcontroller.packet.*;
+import net.floodlightcontroller.packet.RIPv2;
+import net.floodlightcontroller.packet.RIPv2Entry;
+import net.floodlightcontroller.packet.UDP;
 
 /**
  * @author Aaron Gember-Jacobson and Anubhavnidhi Abhashkumar
