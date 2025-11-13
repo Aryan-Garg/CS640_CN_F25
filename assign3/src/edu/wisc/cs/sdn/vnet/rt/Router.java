@@ -65,7 +65,7 @@ public class Router extends Device
 
     	    // Insert "direct" route with no gateway
     	    // Signature is the standard CS640: insert(destination, gateway, mask, iface)
-    	    boolean ok = this.routeTable.insert(subnet, 0, mask, iface);
+    	    this.routeTable.insert(subnet, 0, mask, iface);
 
     	    System.out.println(String.format(
     	        "[RIP-init] Direct route %s/%d via iface %s %s",
