@@ -97,6 +97,8 @@ public class Router extends Device
     	    // Insert "direct" route with no gateway
     	    // Signature is the standard CS640: insert(destination, gateway, mask, iface)
     	    this.routeTable.insert(subnet, 0, mask, iface);
+			
+			this.ripMap.put(subnet, new RipInfo(0, true));
 
     	    System.out.println(
         		String.format(
@@ -175,7 +177,7 @@ public class Router extends Device
         ip.setProtocol(IPv4.PROTOCOL_UDP);
         ip.setSourceAddress(outIface.getIpAddress());
         ip.setDestinationAddress(dstIp);
-        ip.setTtl((byte)64);
+        ip.setTtl((byte)1);
 
         Ethernet ether = new Ethernet();
         ether.setSourceMACAddress(outIface.getMacAddress().toBytes());
@@ -190,10 +192,8 @@ public class Router extends Device
 
         System.out.println("Sent RIP packet out " + outIface.getName());
     }
-	/**
-	 * Load a new ARP cache from a file.
-	 * @param arpCacheFile the name of the file containing the ARP cache
-	 */
+
+
 	public void loadArpCache(String arpCacheFile)
 	{
 		if (!arpCache.load(arpCacheFile))
@@ -209,11 +209,6 @@ public class Router extends Device
 		System.out.println("----------------------------------");
 	}
 
-	/**
-	 * Handle an Ethernet packet received on a specific interface.
-	 * @param etherPacket the Ethernet packet that was received
-	 * @param inIface the interface on which the packet was received
-	 */
 	@Override
 	public void handlePacket(Ethernet etherPacket, Iface inIface)
 	{
