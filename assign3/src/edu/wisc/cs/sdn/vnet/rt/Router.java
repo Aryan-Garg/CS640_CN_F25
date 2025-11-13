@@ -220,104 +220,113 @@ public class Router extends Device
 		System.out.println("*** -> Received packet: " +
 				etherPacket.toString().replace("\n", "\n\t"));
 		
-		System.out.println("After toString ....");
+		// System.out.println("After toString ....");
 		if (etherPacket == null) {
-        	System.out.println("Null Ethernet frame received - drop pkt");
+        	System.out.println("[DROP] Null Ethernet frame");
         	return;
     	}
 		/********************************************************************/
+		short etherType;
 		try{
-			short etherType;
-			try {
-            etherType = etherPacket.getEtherType();
-        	} catch (Exception e) {
-        	    System.err.println("Failed to read EtherType - dropping pkt: " + e);
-        	    e.printStackTrace();
+			etherType = etherPacket.getEtherType();
+		} catch (Exception e){
+			System.err.println("[DROP] Bad EtherType: " + e);
+    		e.printStackTrace();
+    		return;
+		}
+		
+		System.out.println("[DEBUG] EtherType: " + etherType);
+		if (etherType != Ethernet.TYPE_IPv4) {
+        	System.out.println("[DROP] Not IPv4");
+        	return;
+        }
+		IPacket payload = etherPacket.getPayload();
+		if (!(payload instanceof IPv4)) {
+        	System.out.println(" [DROP] Ethernet payload not IPv4 instance");
+        	return;
+        }
+        IPv4 ipv4Packet = (IPv4) payload;
+		if (ipv4Packet.getProtocol() == IPv4.PROTOCOL_UDP) {
+        	UDP udp = (UDP) ipv4Packet.getPayload();
+        	
+			if (udp.getDestinationPort() == RIP_PORT) {
+
+				boolean selfPacket = false;
+				for (Iface iface : this.interfaces.values()) {
+    				if (ipv4Packet.getSourceAddress() == iface.getIpAddress()) {
+    				    selfPacket = true;
+    				    break;
+    				}
+				}
+
+				if (selfPacket) {
+				    // DEBUG print 
+				    System.out.println("[RIP] Dropping self-originated RIP packet");
+				    return;
+				}
+
+				System.out.println("[RIP] Received RIP packet on " + inIface.getName());
+        	    handleRipPacket(etherPacket, ipv4Packet, udp, inIface);
         	    return;
         	}
-			System.out.println("*** -> EtherType: " + etherType);
-			if (etherType != Ethernet.TYPE_IPv4) {
-            	System.out.println("Not IPv4 - dropping");
-            	return;
-        	}
-			IPacket payload = etherPacket.getPayload();
-			if (!(payload instanceof IPv4)) {
-            	System.out.println("Ethernet payload not IPv4 instance - dropping");
-            	return;
-        	}
-        	IPv4 ipv4Packet = (IPv4) payload;
-
-			if (ipv4Packet.getProtocol() == IPv4.PROTOCOL_UDP) {
-            	UDP udp = (UDP) ipv4Packet.getPayload();
-            	if (udp.getDestinationPort() == RIP_PORT) {
-            	    handleRipPacket(etherPacket, ipv4Packet, udp, inIface);
-            	    return;
-            	}
-        	}
-
-			// Verify checksum then TTL
-			short originalChecksum = ipv4Packet.getChecksum();
-    		ipv4Packet.setChecksum((short) 0);
-    		byte[] hdrBytes = ipv4Packet.serialize(); // recomputes checksum internally
-    		IPv4 temp = new IPv4();
-    		temp.deserialize(hdrBytes, 0, hdrBytes.length);
-			short computed = temp.getChecksum();
-    		if (originalChecksum != computed) {
-    		    System.out.println("Invalid checksum — dropping pkt");
-    		    return;
-    		}
-			// After success verify TTL > 1:
-			byte ttl = ipv4Packet.getTtl();
-			ttl--;
-			if (ttl <= 0){
-				System.out.println("TTL <= 0 dropping");
-				return;
-			}
-			ipv4Packet.setTtl(ttl);
-    		ipv4Packet.setChecksum((short)0);
-			// See if the packet is destined for one of the interfaces or not
-			/** If the packet’s destination IP address exactly matches one of
-				the interface’s IP addresses (not necessarily the incoming interface), then you no need to do any further
-				processing - i.e., router should drop the packet. */
-			for (Iface iface : this.interfaces.values()) {
-            	if (ipv4Packet.getDestinationAddress() == iface.getIpAddress()) {
-            	    System.out.println("Packet destined for router interface " + iface.getName() + " - dropping");
-            	    return;
-            	}
-       		}
-			// else: use lookup from RouterTable.java to find the destination IP address match.
-			RouteEntry bestRoute = this.routeTable.lookup(ipv4Packet.getDestinationAddress());
-			if (bestRoute == null || bestRoute.getInterface() == null) {
-    			System.out.println("No valid route found => dropping pkt");
-    			return;
-			}
-			// If matches a dest, then determine next-hop IP address and lookup MAC of that IP. 
-			int nextHop = bestRoute.getGatewayAddress();
-    		if (nextHop == 0) {
-    		    nextHop = ipv4Packet.getDestinationAddress();
-    		}
-			// call lookup(...) in the edu.wisc.cs.sdn.vnet.rt.ArpCache class to obtain the MAC from the statically populated ARP cache.
-			ArpEntry arpEntry = this.arpCache.lookup(nextHop);
-    		if (arpEntry == null || arpEntry.getMac() == null) {
-    		    System.out.println("ARP entry not found => dropping pkt");
-    		    return;
-    		}
-			// Tis iz the new dest MAC addr & the MAC of the outgoing interface should be the new source MAC address for the Ethernet frame.
-			etherPacket.setDestinationMACAddress(arpEntry.getMac().toBytes());
-    		etherPacket.setSourceMACAddress(bestRoute.getInterface().getMacAddress().toBytes());
-			// --- Recompute IPv4 checksum via serialization ---
-    		ipv4Packet.setChecksum((short) 0);
-    		ipv4Packet.serialize();  // will auto-fill checksum
-				// After all this call sendPacket(...) inherited from edu.wisc.cs.sdn.vnet.Device to send
-			sendPacket(etherPacket , bestRoute.getInterface());
-			System.out.println("*** [+] Forwarded packet to " + IPv4.fromIPv4Address(ipv4Packet.getDestinationAddress()) +
-                           " via iface " + bestRoute.getInterface().getName() +
-                           " (nextHop=" + IPv4.fromIPv4Address(nextHop) + ", dstMAC=" + arpEntry.getMac() + ")");
-		} catch (Exception e){
-			System.err.println("Exception in handlePacket: " + e);
-    		e.printStackTrace();
+        }
+		// Verify checksum then TTL
+		short originalChecksum = ipv4Packet.getChecksum();
+    	ipv4Packet.setChecksum((short) 0);
+    	byte[] hdrBytes = ipv4Packet.serialize(); // recomputes checksum internally
+    	IPv4 temp = new IPv4();
+    	temp.deserialize(hdrBytes, 0, hdrBytes.length);
+		short computed = temp.getChecksum();
+    	if (originalChecksum != computed) {
+    	    System.out.println("Invalid checksum — dropping pkt");
+    	    return;
+    	}
+		// After success verify TTL > 1:
+		byte ttl = ipv4Packet.getTtl();
+		ttl--;
+		if (ttl <= 0){
+			System.out.println("[DROP] TTL expired (<= 0)");
+			return;
 		}
-		/********************************************************************/
+		ipv4Packet.setTtl(ttl);
+    	ipv4Packet.setChecksum((short)0);
+		// See if the packet is destined for one of the interfaces or not
+		/** If the packet’s destination IP address exactly matches one of
+			the interface’s IP addresses (not necessarily the incoming interface), then you no need to do any further
+			processing - i.e., router should drop the packet. */
+		for (Iface iface : this.interfaces.values()) {
+        	if (ipv4Packet.getDestinationAddress() == iface.getIpAddress()) {
+        	    System.out.println("Packet destined for router interface " + iface.getName() + " - dropping");
+        	    return;
+        	}
+       	}
+		// else: use lookup from RouterTable.java to find the destination IP address match.
+		RouteEntry bestRoute = this.routeTable.lookup(ipv4Packet.getDestinationAddress());
+		if (bestRoute == null || bestRoute.getInterface() == null) {
+    		System.out.println("[DROP] No valid route found => dropping pkt");
+    		return;
+		}
+		// If matches a dest, then determine next-hop IP address and lookup MAC of that IP. 
+		int nextHop = bestRoute.getGatewayAddress();
+    	if (nextHop == 0) nextHop = ipv4Packet.getDestinationAddress();
+    	
+		ArpEntry arpEntry = this.arpCache.lookup(nextHop);
+    	if (arpEntry == null || arpEntry.getMac() == null) {
+    	    System.out.println("ARP entry not found => dropping pkt");
+    	    return;
+    	}
+		// Tis iz the new dest MAC addr & the MAC of the outgoing interface should be the new source MAC address for the Ethernet frame.
+		etherPacket.setDestinationMACAddress(arpEntry.getMac().toBytes());
+    	etherPacket.setSourceMACAddress(bestRoute.getInterface().getMacAddress().toBytes());
+    	ipv4Packet.setChecksum((short) 0);
+    	ipv4Packet.serialize();  // will auto-fill checksum
+		
+		// After all this call sendPacket(...) inherited from edu.wisc.cs.sdn.vnet.Device to send
+		sendPacket(etherPacket , bestRoute.getInterface());
+		System.out.println("*** [++FORWARD] " + IPv4.fromIPv4Address(ipv4Packet.getDestinationAddress()) +
+                       " via iface " + bestRoute.getInterface().getName() +
+                       " (nextHop=" + IPv4.fromIPv4Address(nextHop) + ", dstMAC=" + arpEntry.getMac() + ")");
+		
 	}
 
 	public void handleRipPacket(Ethernet ether, IPv4 ip, UDP udp, Iface iface)
