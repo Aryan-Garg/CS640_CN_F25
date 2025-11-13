@@ -155,7 +155,6 @@ public class Router extends Device
             RIPv2Entry r = new RIPv2Entry();
             r.setAddress(subnet);
             r.setSubnetMask(mask);
-            r.setNextHop(entry.getGatewayAddress());
             r.setMetric(info.metric);
 
             entries.add(r);

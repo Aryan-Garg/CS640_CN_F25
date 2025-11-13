@@ -57,6 +57,10 @@ public class RouteTable
 			/*****************************************************************/
 		}
 	}
+
+	public List<RouteEntry> getEntries() {
+    	return this.entries;
+	}
 	
 	/**
 	 * Populate the route table from a file.
