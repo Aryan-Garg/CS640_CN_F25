@@ -91,10 +91,6 @@ public class Router extends Device
 	{
     	// Seed directly connected routes (gateway = 0; metric handled by RouteTable)
     	for (Iface iface : this.interfaces.values()) {
-			if(iface == null){
-				System.out.println("[RIP] Skipping null iface in startRIP");
-        		continue;
-			}
 			int ip   = iface.getIpAddress();
         	int mask = iface.getSubnetMask();
 			if (ip == 0 || mask == 0) {
@@ -122,7 +118,6 @@ public class Router extends Device
 		/* Send RIP requests */
         for (Iface iface : this.interfaces.values()) {
 			int ip = iface.getIpAddress();
-        	if (ip == 0) continue; // do not send from unconfigured iface
             sendRipRequest(iface);
         }
 
