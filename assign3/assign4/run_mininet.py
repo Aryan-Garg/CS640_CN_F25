@@ -36,6 +36,11 @@ class VNetHost:
         self.host.cmd( '/usr/sbin/sshd -o "Banner %s"' % banner, '-o "UseDNS no"' )
         info( '***', self.name, 'is running sshd on', intf, 'at', self.ip, '\n' )
 
+    def disable_v6(self):
+        self.host.cmd("sysctl -w net.ipv6.conf.all.disable_ipv6=1")
+        self.host.cmd("sysctl -w net.ipv6.conf.lo.disable_ipv6=1")
+        self.host.cmd("sysctl -w net.ipv6.conf.default.disable_ipv6=1")
+
     def starthttp(self):
         "Start simple Python web server on hosts"
         info( '*** Starting SimpleHTTPServer on host', self.host, '\n' )
@@ -333,6 +338,7 @@ if __name__ == '__main__':
     for vhost in topo.vhosts:
         node = net.get(vhost.name)
         vhost.configureRoute(node)
+        vhost.disable_v6()
         vhost.starthttp()
     for vrouter in topo.vrouters.values():
         node = net.get(vrouter.name)
