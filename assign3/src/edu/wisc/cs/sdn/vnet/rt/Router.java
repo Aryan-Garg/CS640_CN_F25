@@ -380,12 +380,12 @@ public class Router extends Device
 		
 		
 		// Test lab4:
-		double rand = Math.random();
-        // dropping a pakcet with 25% probablity --- bad pipe
-        if (rand < 0.25) {
-                System.out.println("*** [Lab4 TEST] Randomly dropping a packet");
-                return;
-        }
+		// double rand = Math.random();
+        // // dropping a pakcet with 25% probablity --- bad pipe
+        // if (rand < 0.25) {
+        //         System.out.println("*** [Lab4 TEST] Randomly dropping a packet");
+        //         return;
+        // }
 
 		// After all this call sendPacket(...) inherited from edu.wisc.cs.sdn.vnet.Device to send
 		sendPacket(etherPacket , bestRoute.getInterface());

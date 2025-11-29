@@ -1,0 +1,15 @@
+agarg54 & ford23
+
+Aryan Garg & Aidan Ford
+
+---
+
+# Lab 4
+
+### How to Run?
+> make     
+> cd src
+
+> java TCPend -p 6007 -s 10.0.2.102 -a 6008 -f sendfile.md -m 512 -c 4 
+
+> java TCPend -p 6008 -m 512 -c 4 -f sendFile_received2.md
