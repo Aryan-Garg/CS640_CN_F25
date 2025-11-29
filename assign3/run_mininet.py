@@ -342,6 +342,10 @@ if __name__ == '__main__':
         for vhost in topo.vhosts:
             vhost.configureArp(arpcache)
 
+    from mininet.term import makeTerm
+    makeTerm(net.get('h1'))
+    makeTerm(net.get('h2'))
+    
     CLI( net )
     stopallhttp()
     net.stop()
