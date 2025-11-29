@@ -1,11 +1,10 @@
-mininet@mininet-17.cs.wisc.edu
+ssh -X mininet@mininet-17.cs.wisc.edu
 wAgNhdnK
 
 1. 
 ./run_pox.sh
 
 2. 
-sudo ./run_mininet.py topos/pair_rt.topo -a
 sudo ./run_mininet.py topos/single_rt.topo -a
 
 3. 
