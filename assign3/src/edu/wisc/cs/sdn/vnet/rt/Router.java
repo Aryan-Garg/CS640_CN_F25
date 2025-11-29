@@ -378,6 +378,15 @@ public class Router extends Device
     	ipv4Packet.setChecksum((short) 0);
     	ipv4Packet.serialize();  // will auto-fill checksum
 		
+		
+		// Test lab4:
+		double rand = Math.random();
+        // dropping a pakcet with 5% probablity
+        if (rand < 0.05) {
+                System.out.println("Randomly dropping a packet");
+                return;
+        }
+
 		// After all this call sendPacket(...) inherited from edu.wisc.cs.sdn.vnet.Device to send
 		sendPacket(etherPacket , bestRoute.getInterface());
 		System.out.println("*** [++FORWARD] " + IPv4.fromIPv4Address(ipv4Packet.getDestinationAddress()) +
