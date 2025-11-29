@@ -94,6 +94,7 @@ public class Sender {
         if (synAck == null || !synAck.verifyChecksum()) {
             System.err.println("Failed to receive valid SYN-ACK");
             printStats(fileLen);
+            cleanup();
             return;
         }
         pktsRcvd++;
@@ -216,6 +217,7 @@ public class Sender {
         // we could optionally wait for final ACK, but spec doesn’t force it here
 
         printStats(fileLen);
+        cleanup();
     }
 
     // ---- helper methods ----
@@ -242,6 +244,7 @@ public class Sender {
             if (count > MAX_RETX) {
                 System.err.println("ERROR: max retransmissions reached for seq=" + seq);
                 printStats(-1);
+                cleanup();
                 System.exit(1);
             }
             retxCount.put(seq, count);
@@ -345,5 +348,31 @@ public class Sender {
         System.out.println("Number of packets discarded due to incorrect checksum: " + checksumErrors);
         System.out.println("Number of retransmissions: " + retransmissions);
         System.out.println("Number of duplicate acknowledgements: " + duplicateAcks);
+    }
+
+    private static void cleanup() {
+        try {
+            // cancel any outstanding timers
+            for (ScheduledFuture<?> f : timers.values()) {
+                if (f != null) {
+                    f.cancel(true);
+                }
+            }
+            timers.clear();
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            scheduler.shutdownNow();   // stop the thread pool
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            if (sock != null && !sock.isClosed()) {
+                sock.close();          // close UDP socket
+            }
+        } catch (Exception e) {
+            // ignore
+        }
     }
 }
