@@ -274,8 +274,8 @@ public class Router extends Device
     		System.err.println("[DROP] inIface is null -- ignoring early packet");
     		return;
 		}
-		System.out.println("*** -> Received packet: " +
-				etherPacket.toString().replace("\n", "\n\t"));
+		// System.out.println("*** -> Received packet: " +
+		// 		etherPacket.toString().replace("\n", "\n\t"));
 		
 		// System.out.println("After toString ....");
 		if (etherPacket == null) {
