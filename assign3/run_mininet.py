@@ -341,7 +341,7 @@ if __name__ == '__main__':
     if (staticarp):
         for vhost in topo.vhosts:
             vhost.configureArp(arpcache)
-    
+
     CLI( net )
     stopallhttp()
     net.stop()
