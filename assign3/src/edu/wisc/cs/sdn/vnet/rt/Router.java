@@ -381,9 +381,9 @@ public class Router extends Device
 		
 		// Test lab4:
 		double rand = Math.random();
-        // dropping a pakcet with 5% probablity
-        if (rand < 0.05) {
-                System.out.println("Randomly dropping a packet");
+        // dropping a pakcet with 25% probablity --- bad pipe
+        if (rand < 0.25) {
+                System.out.println("*** [Lab4 TEST] Randomly dropping a packet");
                 return;
         }
 
